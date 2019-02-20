@@ -18,6 +18,17 @@
 
 set -ex
 
-mxnet_variant=${1}
-source tools/staticbuild/build.sh ${mxnet_variant} pip
+export mxnet_variant=${1}
 
+# Create wheel workspace
+rm -rf wheel_build
+mkdir wheel_build
+cd wheel_build
+
+# Setup workspace
+pip install --user pypandoc
+ln -s ../. mxnet-build
+cp -R ../tools/pip/* .
+
+# Build wheel file
+python setup.py bdist_wheel

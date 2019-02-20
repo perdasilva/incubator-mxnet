@@ -1342,6 +1342,13 @@ build_static_python() {
     popd
 }
 
+package_static_python() {
+    set -ex
+    pushd .
+    ./ci/publish/python/package.sh ${1}
+    popd
+}
+
 publish_scala_build() {
     set -ex
     pushd .
