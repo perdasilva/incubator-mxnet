@@ -93,14 +93,14 @@ shutil.copytree(os.path.join(CURRENT_DIR, 'mxnet-build/3rdparty/tvm/nnvm/include
 
 package_name = 'mxnet'
 
-variant = os.environ['mxnet_variant'].upper()
+variant = os.environ['mxnet_variant']
 if variant != 'cpu':
     package_name = 'mxnet_{0}'.format(variant.lower())
 
 with open('doc/PYPI_README.md') as readme_file:
     long_description = readme_file.read()
 
-with open('doc/{0}_ADDITIONAL.md'.format(variant)) as variant_doc:
+with open('doc/{0}_ADDITIONAL.md'.format(variant.upper())) as variant_doc:
     long_description = long_description + variant_doc.read()
 
 # pypi only supports rst, so use pandoc to convert
@@ -133,6 +133,7 @@ short_description += ' This version uses {0}.'.format(' and '.join(libraries))
 package_data = {'mxnet': [os.path.basename(LIB_PATH[0])],
                 'dmlc_tracker': []}
 if variant.endswith('mkl'):
+    print('**** {}'.format(variant))
     if platform.system() == 'Darwin':
         shutil.copy(os.path.join(os.path.dirname(LIB_PATH[0]), 'libmklml.dylib'), os.path.join(CURRENT_DIR, 'mxnet'))
         shutil.copy(os.path.join(os.path.dirname(LIB_PATH[0]), 'libiomp5.dylib'), os.path.join(CURRENT_DIR, 'mxnet'))
@@ -141,6 +142,7 @@ if variant.endswith('mkl'):
         package_data['mxnet'].append('libiomp5.dylib')
         package_data['mxnet'].append('libmkldnn.0.dylib')
     else:
+        print('**** {}'.format(os.path.join(os.path.dirname(LIB_PATH[0]), 'libmklml_intel.so')))
         shutil.copy(os.path.join(os.path.dirname(LIB_PATH[0]), 'libmklml_intel.so'), os.path.join(CURRENT_DIR, 'mxnet'))
         shutil.copy(os.path.join(os.path.dirname(LIB_PATH[0]), 'libiomp5.so'), os.path.join(CURRENT_DIR, 'mxnet'))
         shutil.copy(os.path.join(os.path.dirname(LIB_PATH[0]), 'libmkldnn.so.0'), os.path.join(CURRENT_DIR, 'mxnet'))

@@ -565,12 +565,12 @@ def test_unix_python2_cpu() {
     }]
 }
 
-def test_unix_python2_gpu() {
-    return ['Python2: GPU': {
+def test_unix_python2_gpu(variant) {
+    return ["Python2: GPU-${variant}": {
       node(NODE_LINUX_GPU) {
         ws('workspace/ut-python2-gpu') {
           try {
-            utils.unpack_and_init('gpu', mx_lib, true)
+            utils.unpack_and_init("${variant}", mx_lib, true)
             python2_gpu_ut('ubuntu_gpu')
             utils.publish_test_coverage()
           } finally {

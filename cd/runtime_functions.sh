@@ -365,7 +365,6 @@ build_ubuntu_cpu_openblas() {
         USE_BLAS=openblas             \
         USE_MKLDNN=0                  \
         USE_DIST_KVSTORE=1            \
-        USE_LIBJPEG_TURBO=1           \
         -j$(nproc)
 }
 
@@ -1332,7 +1331,22 @@ build_static_python_mkl() {
     set -ex
     pushd .
     export mxnet_variant=mkl
-    ./ci/publish/python/build.sh
+    ./cd/publish/python/build.sh
+    popd
+}
+
+build_static_python() {
+    set -ex
+    pushd .
+    ./cd/python_static_build.sh ${1}
+    popd
+}
+
+package_static_python() {
+    set -ex
+    pushd .
+    find . -maxdepth 2
+    ./cd/python_package.sh ${1}
     popd
 }
 
