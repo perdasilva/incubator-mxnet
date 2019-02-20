@@ -1335,6 +1335,13 @@ build_static_python_mkl() {
     popd
 }
 
+build_static_python() {
+    set -ex
+    pushd .
+    ./ci/publish/python/buid.sh ${1}
+    popd
+}
+
 publish_scala_build() {
     set -ex
     pushd .

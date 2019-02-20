@@ -18,9 +18,20 @@
 
 set -ex
 
-source tools/staticbuild/build.sh $mxnet_variant pip
+mxnet_variant=${1}
+source tools/staticbuild/build.sh ${mxnet_variant} pip
 
 set -ex
 
-# Compile tests for discovery later
-source tools/staticbuild/build_wheel.sh
+# Build wheel file in its own directory
+# symlink the mxnet directory (with compiled artifacts)
+# to mxnet-build
+rm -rf wheel_build
+mkdir wheel_build
+cd wheep_build
+
+cp -R ../tools/pip/* .
+
+# setup.py expects 
+ln -s ../mxnet mxnet-build
+python setup.py bdist_wheel
