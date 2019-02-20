@@ -93,14 +93,24 @@ def python3_gpu_ut_nocudnn(docker_container_name) {
 
 //------------------------------------------------------------------------------------------
 
-def docker_build_cpu(variant, mxnet_version, python_version) {
-  
-  def python_suffix = python_version == 'python3' ? '_py3' : ''
-  def platform = 'ubuntu:16.04'
-  def dockerfile = "cd/Dockerfile.${python_suffix}"
-  def tag = "mxnetcd/python:${mxnet_version}_cpu${python_suffix}"
+def docker_build_cpu(variant, mxnet_version, is_python3) {
+
+  def python_version = is_python3 ? 'py3' : 'py2'
+  def python_command = is_python3 ? 'python3' : 'python'
+
+  def dockerfile = "cd/Dockerfile.${python_version}"
+
+  def tag = "perdasilva/python:${mxnet_version}_cpu"
+  if (variant == "mkl") {
+    tag += "_mkl"
+  }
+  if (is_python3) {
+    tag += "_py3"
+  }
+
   def context = 'wheel_build/dist'
   def stash_name = variant.endsWith('mkl') ? 'pip_mkldnn_cpu' : 'pip_cpu'
+  def platform = 'ubuntu:16.04'
 
   return ["Docker Build: ${tag}": {
       node(NODE_LINUX_CPU) {
@@ -108,16 +118,12 @@ def docker_build_cpu(variant, mxnet_version, python_version) {
           timeout(time: max_time, unit: 'MINUTES') {
             utils.unpack_and_init("${stash_name}", mx_pip, false)
             sh "docker build -t ${tag} -f ${dockerfile} --build-arg PLATFORM=${platform} ${context}"
-            sh """docker run -v `pwd`:/mxnet ${tag} bash -c "${python3} /mxnet/tests/python/train/test_conv.py" """
-            sh """docker run -v `pwd`:/mxnet ${tag} bash -c "${python3} /mxnet/example/image-classification/train_mnist.py" """
+            sh """docker run -v `pwd`:/mxnet ${tag} bash -c "${python_command} /mxnet/tests/python/train/test_conv.py" """
+            sh """docker run -v `pwd`:/mxnet ${tag} bash -c "${python_command} /mxnet/example/image-classification/train_mnist.py" """
           }
         }
       }
     }]
-}
-
-def test_docker(image) {
-
 }
 
 def pip_package_unix() {
@@ -154,7 +160,7 @@ def pip_package_unix_gpu(variant) {
         ws("workspace/package-static-gpu-${variant}") {
           timeout(time: max_time, unit: 'MINUTES') {
             utils.unpack_and_init("gpu_${variant}", mx_lib, false)
-            docker_run('publish.ubuntu1404_cpu', "package_static_python ${variant}", false)
+            docker_run("ubuntu_gpu_${variant}", "package_static_python ${variant}", false)
             utils.pack_lib("pip_gpu_${variant}", mx_pip, false)
           }
         }
@@ -168,7 +174,7 @@ def pip_package_unix_gpu_mkl(variant) {
         ws("workspace/package-static-gpu-mkl-${variant}") {
           timeout(time: max_time, unit: 'MINUTES') {
             utils.unpack_and_init("mkldnn_gpu_${variant}", mx_mkldnn_lib, false)
-            docker_run('publish.ubuntu1404_cpu', "package_static_python ${variant}mkl", false)
+            docker_run("ubuntu_gpu_${variant}", "package_static_python ${variant}mkl", false)
             utils.pack_lib("pip_mkldnn_gpu_${variant}", mx_pip, false)
           }
         }
@@ -206,7 +212,7 @@ def compile_unix_static_cpu_mkl() {
 
 def compile_unix_static_cu80() {
   return ['CU80: Static': {
-      node(NODE_LINUX_GPU) {
+      node(NODE_LINUX_CPU) {
         ws('workspace/build-static-cu80') {
           timeout(time: max_time, unit: 'MINUTES') {
             utils.init_git()
@@ -220,7 +226,7 @@ def compile_unix_static_cu80() {
 
 def compile_unix_static_cu80_mkl() {
   return ['CU80MKL: Static': {
-      node(NODE_LINUX_GPU) {
+      node(NODE_LINUX_CPU) {
         ws('workspace/build-static-cu80-mkl') {
           timeout(time: max_time, unit: 'MINUTES') {
             utils.init_git()
@@ -234,7 +240,7 @@ def compile_unix_static_cu80_mkl() {
 
 def compile_unix_static_cu90() {
   return ['CU90: Static': {
-      node(NODE_LINUX_GPU) {
+      node(NODE_LINUX_CPU) {
         ws('workspace/build-static-cu90') {
           timeout(time: max_time, unit: 'MINUTES') {
             utils.init_git()
@@ -248,7 +254,7 @@ def compile_unix_static_cu90() {
 
 def compile_unix_static_cu90_mkl() {
   return ['CU90MKL: Static': {
-      node(NODE_LINUX_GPU) {
+      node(NODE_LINUX_CPU) {
         ws('workspace/build-static-cu90-mkl') {
           timeout(time: max_time, unit: 'MINUTES') {
             utils.init_git()
@@ -261,8 +267,8 @@ def compile_unix_static_cu90_mkl() {
 }
 
 def compile_unix_static_cu92() {
-  return ['CU92MKL: Static': {
-      node(NODE_LINUX_GPU) {
+  return ['CU92: Static': {
+      node(NODE_LINUX_CPU) {
         ws('workspace/build-static-cu92') {
           timeout(time: max_time, unit: 'MINUTES') {
             utils.init_git()
@@ -276,7 +282,7 @@ def compile_unix_static_cu92() {
 
 def compile_unix_static_cu92_mkl() {
   return ['CU92MKL: Static': {
-      node(NODE_LINUX_GPU) {
+      node(NODE_LINUX_CsPU) {
         ws('workspace/build-static-cu92-mkl') {
           timeout(time: max_time, unit: 'MINUTES') {
             utils.init_git()
@@ -289,12 +295,12 @@ def compile_unix_static_cu92_mkl() {
 }
 
 def compile_unix_static_cu100() {
-  return ['CU92MKL: Static': {
-      node(NODE_LINUX_GPU) {
+  return ['CU100: Static': {
+      node(NODE_LINUX_CPU) {
         ws('workspace/build-static-cu10') {
           timeout(time: max_time, unit: 'MINUTES') {
             utils.init_git()
-            docker_run('publish.ubuntu1404_gpu', 'build_static_python cu100', false)
+            docker_run('publish.ubuntu1404_cpu', 'build_static_python cu100', false)
             utils.pack_lib('gpu_cu100', mx_lib, false)
           }
         }
@@ -303,12 +309,12 @@ def compile_unix_static_cu100() {
 }
 
 def compile_unix_static_cu100_mkl() {
-  return ['CU92MKL: Static': {
-      node(NODE_LINUX_GPU) {
+  return ['CU100MKL: Static': {
+      node(NODE_LINUX_CPU) {
         ws('workspace/build-static-cu10-mkl') {
           timeout(time: max_time, unit: 'MINUTES') {
             utils.init_git()
-            docker_run('publish.ubuntu1404_gpu', 'build_static_python cu100mkl', false)
+            docker_run('publish.ubuntu1404_cpu', 'build_static_python cu100mkl', false)
             utils.pack_lib('mkldnn_gpu_cu100', mx_mkldnn_lib, false)
           }
         }
@@ -341,7 +347,7 @@ def test_unix_python2_gpu(variant) {
         ws('workspace/ut-python2-gpu') {
           try {
             utils.unpack_and_init("gpu_${variant}", mx_lib, false)
-            python2_gpu_ut('ubuntu_gpu')
+            python2_gpu_ut("ubuntu_gpu_${variant}")
             utils.publish_test_coverage()
           } finally {
             utils.collect_test_results_unix('nosetests_gpu.xml', 'nosetests_python2_gpu.xml')
@@ -358,7 +364,7 @@ def test_unix_python2_quantize_gpu(variant) {
           timeout(time: max_time, unit: 'MINUTES') {
             try {
               utils.unpack_and_init("gpu_${variant}", mx_lib, false)
-              docker_run('ubuntu_gpu', 'unittest_ubuntu_python2_quantization_gpu', true)
+              docker_run("ubuntu_gpu_${variant}", 'unittest_ubuntu_python2_quantization_gpu', true)
               utils.publish_test_coverage()
             } finally {
               utils.collect_test_results_unix('nosetests_quantization_gpu.xml', 'nosetests_python2_quantize_gpu.xml')
@@ -375,7 +381,7 @@ def test_unix_python2_mkldnn_gpu(variant) {
         ws('workspace/ut-python2-mkldnn-gpu') {
           try {
             utils.unpack_and_init("mkldnn_gpu_${variant}", mx_mkldnn_lib, false)
-            python2_gpu_ut('ubuntu_gpu')
+            python2_gpu_ut("ubuntu_gpu_${variant}")
             utils.publish_test_coverage()
           } finally {
             utils.collect_test_results_unix('nosetests_gpu.xml', 'nosetests_python2_mkldnn_gpu.xml')
@@ -425,7 +431,7 @@ def test_unix_python3_gpu(variant) {
         ws('workspace/ut-python3-gpu') {
           try {
             utils.unpack_and_init("gpu_${variant}", mx_lib, false)
-            python3_gpu_ut('ubuntu_gpu')
+            python3_gpu_ut("ubuntu_gpu_${variant}")
             utils.publish_test_coverage()
           } finally {
             utils.collect_test_results_unix('nosetests_gpu.xml', 'nosetests_python3_gpu.xml')
@@ -442,7 +448,7 @@ def test_unix_python3_quantize_gpu(variant) {
           timeout(time: max_time, unit: 'MINUTES') {
             try {
               utils.unpack_and_init("gpu_${variant}", mx_lib, false)
-              docker_run('ubuntu_gpu', 'unittest_ubuntu_python3_quantization_gpu', true)
+              docker_run("ubuntu_gpu_${variant}", 'unittest_ubuntu_python3_quantization_gpu', true)
               utils.publish_test_coverage()
             } finally {
               utils.collect_test_results_unix('nosetests_quantization_gpu.xml', 'nosetests_python3_quantize_gpu.xml')
@@ -511,7 +517,7 @@ def test_unix_python3_mkldnn_gpu(variant) {
         ws('workspace/ut-python3-mkldnn-gpu') {
           try {
             utils.unpack_and_init("mkldnn_gpu_${variant}", mx_mkldnn_lib, false)
-            python3_gpu_ut('ubuntu_gpu')
+            python3_gpu_ut("ubuntu_gpu_${variant}")
             utils.publish_test_coverage()
           } finally {
             utils.collect_test_results_unix('nosetests_gpu.xml', 'nosetests_python3_mkldnn_gpu.xml')
@@ -527,7 +533,7 @@ def test_unix_python3_integration_gpu(variant) {
         ws('workspace/it-python-gpu') {
           timeout(time: max_time, unit: 'MINUTES') {
             utils.unpack_and_init("gpu_${variant}", mx_lib, false)
-            docker_run('ubuntu_gpu', 'integrationtest_ubuntu_gpu_python', true)
+            docker_run("ubuntu_gpu_${variant}", 'integrationtest_ubuntu_gpu_python', true)
             utils.publish_test_coverage()
           }
         }
@@ -555,7 +561,7 @@ def test_unix_distributed_kvstore_gpu(variant) {
         ws('workspace/it-dist-kvstore') {
           timeout(time: max_time, unit: 'MINUTES') {
             utils.unpack_and_init("gpu_${variant}", mx_lib, false)
-            docker_run('ubuntu_gpu', 'integrationtest_ubuntu_gpu_dist_kvstore', true)
+            docker_run("ubuntu_gpu_${variant}", 'integrationtest_ubuntu_gpu_dist_kvstore', true)
             utils.publish_test_coverage()
           }
         }

@@ -16,18 +16,21 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-# Python3 MXNet Dockerfile
-ARG PLATFORM
-FROM ${PLATFORM}
+# Dockerfile to run MXNet on Ubuntu 16.04 for GPU
 
-RUN apt-get update && \
-    apt-get install -y wget python3-dev gcc && \
-    wget https://bootstrap.pypa.io/get-pip.py && \
-    python3 get-pip.py
+FROM nvidia/cuda:10.0-cudnn7-devel
 
-RUN mkdir -p /mxnet
-COPY *.whl /mxnet/.
+WORKDIR /work/deps
 
-WORKDIR /mxnet
-RUN WHEEL_FILE=$(ls -t /mxnet | head -n 1) && echo ${WHEEL_FILE} && pip3 install ${WHEEL_FILE}
+COPY install/ubuntu_python.sh /work/
+RUN /work/ubuntu_python.sh
 
+ARG USER_ID=0
+ARG GROUP_ID=0
+COPY install/ubuntu_adduser.sh /work/
+RUN /work/ubuntu_adduser.sh
+
+COPY runtime_functions.sh /work/
+
+WORKDIR /work/mxnet
+ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/lib

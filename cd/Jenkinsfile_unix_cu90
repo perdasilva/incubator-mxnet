@@ -29,7 +29,7 @@ node('restricted-utility') {
   utils = load('ci/Jenkinsfile_utils.groovy')
   custom_steps = load('cd/Jenkins_steps.groovy')
 }
-utils.assign_node_labels(utility: 'restricted-utility', linux_cpu: 'mxnetlinux-cpu', linux_gpu: 'mxnetlinux-gpu', linux_gpu_p3: 'mxnetlinux-gpu-p3')
+utils.assign_node_labels(utility: 'restricted-utility', linux_cpu: 'restricted-mxnetlinux-cpu', linux_gpu: 'restricted-mxnetlinux-gpu', linux_gpu_p3: 'restricted-mxnetlinux-gpu-p3')
 
 utils.main_wrapper(
 core_logic: {

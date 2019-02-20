@@ -39,7 +39,7 @@ core_logic: {
   ]) 
 
   utils.parallel_stage('Tests', [
-    // custom_steps.test_unix_python2_gpu('cu80'),
+    custom_steps.test_unix_python2_gpu('cu80'),
     custom_steps.test_unix_python3_gpu('cu80'),
     custom_steps.test_unix_python2_quantize_gpu('cu80'),
     custom_steps.test_unix_python3_quantize_gpu('cu80'),
