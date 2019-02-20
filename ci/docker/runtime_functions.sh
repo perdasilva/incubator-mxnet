@@ -1338,7 +1338,7 @@ build_static_python_mkl() {
 build_static_python() {
     set -ex
     pushd .
-    ./ci/publish/python/buid.sh ${1}
+    ./ci/publish/python/build.sh ${1}
     popd
 }
 

@@ -94,7 +94,7 @@ shutil.copytree(os.path.join(CURRENT_DIR, 'mxnet-build/3rdparty/tvm/nnvm/include
 package_name = 'mxnet'
 
 variant = os.environ['mxnet_variant'].upper()
-if variant != 'CPU':
+if variant != 'cpu':
     package_name = 'mxnet_{0}'.format(variant.lower())
 
 with open('doc/PYPI_README.md') as readme_file:
@@ -110,27 +110,29 @@ if platform.system() == 'Darwin':
 long_description = pypandoc.convert_text(long_description, 'rst', 'md')
 short_description = 'MXNet is an ultra-scalable deep learning framework.'
 libraries = []
-if variant == 'CPU':
+if variant == 'cpu':
     libraries.append('openblas')
 else:
-    if variant.startswith('CU92'):
+    if variant.startswith('cu10'):
+        libraries.append('CUDA-10.0')
+    elif variant.startswith('cu92'):
         libraries.append('CUDA-9.2')
-    elif variant.startswith('CU91'):
+    elif variant.startswith('cu91'):
         libraries.append('CUDA-9.1')
     elif variant.startswith('CU90'):
         libraries.append('CUDA-9.0')
-    elif variant.startswith('CU80'):
+    elif variant.startswith('cu80'):
         libraries.append('CUDA-8.0')
-    elif variant.startswith('CU75'):
+    elif variant.startswith('cu75'):
         libraries.append('CUDA-7.5')
-    if variant.endswith('MKL'):
+    if variant.endswith('mkl'):
         libraries.append('MKLDNN')
 
 short_description += ' This version uses {0}.'.format(' and '.join(libraries))
 
 package_data = {'mxnet': [os.path.basename(LIB_PATH[0])],
                 'dmlc_tracker': []}
-if variant.endswith('MKL'):
+if variant.endswith('mkl'):
     if platform.system() == 'Darwin':
         shutil.copy(os.path.join(os.path.dirname(LIB_PATH[0]), 'libmklml.dylib'), os.path.join(CURRENT_DIR, 'mxnet'))
         shutil.copy(os.path.join(os.path.dirname(LIB_PATH[0]), 'libiomp5.dylib'), os.path.join(CURRENT_DIR, 'mxnet'))
