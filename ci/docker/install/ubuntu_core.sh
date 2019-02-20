@@ -30,12 +30,12 @@ apt-get install -y \
     apt-transport-https \
     build-essential \
     ca-certificates \
-    cmake \
     curl \
     git \
     libatlas-base-dev \
     libcurl4-openssl-dev \
     libjemalloc-dev \
+    libhdf5-dev \
     liblapack-dev \
     libopenblas-dev \
     libopencv-dev \
