@@ -40,6 +40,7 @@ libinfo = {'__file__': libinfo_py}
 exec(compile(open(libinfo_py, "rb").read(), libinfo_py, 'exec'), libinfo, libinfo)
 
 LIB_PATH = libinfo['find_lib_path']()
+print('lib path: {}'.format(LIB_PATH))
 __version__ = libinfo['__version__']
 if 'TRAVIS_TAG' not in os.environ or not os.environ['TRAVIS_TAG'].strip():
     __version__ += 'b{0}'.format(datetime.today().strftime('%Y%m%d'))
@@ -127,30 +128,30 @@ else:
 
 short_description += ' This version uses {0}.'.format(' and '.join(libraries))
 
-package_data = {'mxnet': [os.path.join('mxnet', os.path.basename(LIB_PATH[0]))],
+package_data = {'mxnet': [os.path.basename(LIB_PATH[0])],
                 'dmlc_tracker': []}
 if variant.endswith('MKL'):
     if platform.system() == 'Darwin':
         shutil.copy(os.path.join(os.path.dirname(LIB_PATH[0]), 'libmklml.dylib'), os.path.join(CURRENT_DIR, 'mxnet'))
         shutil.copy(os.path.join(os.path.dirname(LIB_PATH[0]), 'libiomp5.dylib'), os.path.join(CURRENT_DIR, 'mxnet'))
         shutil.copy(os.path.join(os.path.dirname(LIB_PATH[0]), 'libmkldnn.0.dylib'), os.path.join(CURRENT_DIR, 'mxnet'))
-        package_data['mxnet'].append('mxnet/libmklml.dylib')
-        package_data['mxnet'].append('mxnet/libiomp5.dylib')
-        package_data['mxnet'].append('mxnet/libmkldnn.0.dylib')
+        package_data['mxnet'].append('libmklml.dylib')
+        package_data['mxnet'].append('libiomp5.dylib')
+        package_data['mxnet'].append('libmkldnn.0.dylib')
     else:
         shutil.copy(os.path.join(os.path.dirname(LIB_PATH[0]), 'libmklml_intel.so'), os.path.join(CURRENT_DIR, 'mxnet'))
         shutil.copy(os.path.join(os.path.dirname(LIB_PATH[0]), 'libiomp5.so'), os.path.join(CURRENT_DIR, 'mxnet'))
         shutil.copy(os.path.join(os.path.dirname(LIB_PATH[0]), 'libmkldnn.so.0'), os.path.join(CURRENT_DIR, 'mxnet'))
-        package_data['mxnet'].append('mxnet/libmklml_intel.so')
-        package_data['mxnet'].append('mxnet/libiomp5.so')
-        package_data['mxnet'].append('mxnet/libmkldnn.so.0')
+        package_data['mxnet'].append('libmklml_intel.so')
+        package_data['mxnet'].append('libiomp5.so')
+        package_data['mxnet'].append('libmkldnn.so.0')
     shutil.copy(os.path.join(os.path.dirname(LIB_PATH[0]), '../MKLML_LICENSE'), os.path.join(CURRENT_DIR, 'mxnet'))
-    package_data['mxnet'].append('mxnet/MKLML_LICENSE')
+    package_data['mxnet'].append('MKLML_LICENSE')
 if platform.system() == 'Linux':
     shutil.copy(os.path.join(os.path.dirname(LIB_PATH[0]), 'libgfortran.so.3'), os.path.join(CURRENT_DIR, 'mxnet'))
-    package_data['mxnet'].append('mxnet/libgfortran.so.3')
+    package_data['mxnet'].append('libgfortran.so.3')
     shutil.copy(os.path.join(os.path.dirname(LIB_PATH[0]), 'libquadmath.so.0'), os.path.join(CURRENT_DIR, 'mxnet'))
-    package_data['mxnet'].append('mxnet/libquadmath.so.0')
+    package_data['mxnet'].append('libquadmath.so.0')
 
 from mxnet.base import _generate_op_module_signature
 from mxnet.ndarray.register import _generate_ndarray_function_code
@@ -158,6 +159,8 @@ from mxnet.symbol.register import _generate_symbol_function_code
 _generate_op_module_signature('mxnet', 'symbol', _generate_symbol_function_code)
 _generate_op_module_signature('mxnet', 'ndarray', _generate_ndarray_function_code)
 
+print('package data: {}'.format(package_data))
+print('packages: {}'.format(find_packages()))
 setup(name=package_name,
       version=__version__,
       long_description=long_description,
