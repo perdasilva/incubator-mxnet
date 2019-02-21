@@ -24,6 +24,7 @@ WORKDIR /work/deps
 
 COPY install/ubuntu_python.sh /work/
 RUN /work/ubuntu_python.sh
+RUN apt install -y pandoc
 
 ARG USER_ID=0
 ARG GROUP_ID=0

@@ -29,5 +29,5 @@ RUN mkdir -p /mxnet
 COPY *.whl /mxnet/.
 
 WORKDIR /mxnet
-RUN WHEEL_FILE=$(ls -t /mxnet | head -n 1) && echo ${WHEEL_FILE} && pip3 install ${WHEEL_FILE}
+RUN WHEEL_FILE=$(ls -t /mxnet | head -n 1) && echo ${WHEEL_FILE} && pip3 install ${WHEEL_FILE} && rm -f ${WHEEL_FILE}
 

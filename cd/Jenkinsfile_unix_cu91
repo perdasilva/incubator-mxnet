@@ -29,39 +29,39 @@ node('restricted-utility') {
   utils = load('ci/Jenkinsfile_utils.groovy')
   custom_steps = load('cd/Jenkins_steps.groovy')
 }
-utils.assign_node_labels(utility: 'restricted-utility', linux_cpu: 'restricted-mxnetlinux-cpu')
+utils.assign_node_labels(utility: 'restricted-utility', linux_cpu: 'restricted-mxnetlinux-cpu', linux_gpu: 'restricted-mxnetlinux-gpu', linux_gpu_p3: 'restricted-mxnetlinux-gpu-p3')
 
 utils.main_wrapper(
 core_logic: {
   utils.parallel_stage('Build', [
-    custom_steps.compile_unix_static_cpu(),
-    custom_steps.compile_unix_static_cpu_mkl()
-  ])
+    custom_steps.compile_unix_static_cu91(),
+    custom_steps.compile_unix_static_cu91_mkl(),
+  ]) 
 
   utils.parallel_stage('Tests', [
-    // test autograd is stalling for python2 - no idea why
-    // but this is stopping the pipeline
-    custom_steps.test_unix_python2_cpu(),
-    custom_steps.test_unix_python3_cpu(),
-    custom_steps.test_unix_python2_mkldnn_cpu(),
-    custom_steps.test_unix_python3_mkldnn_cpu(),
-    /*  Disabled due to master build failure:
-     *  http://jenkins.mxnet-ci.amazon-ml.com/blue/organizations/jenkins/incubator-mxnet/detail/master/1221/pipeline/
-     *  https://github.com/apache/incubator-mxnet/issues/11801
-    custom_steps.test_unix_distributed_kvstore_cpu()
-    */
+    custom_steps.test_unix_python2_gpu('cu91'),
+    custom_steps.test_unix_python3_gpu('cu91'),
+    custom_steps.test_unix_python2_quantize_gpu('cu91'),
+    custom_steps.test_unix_python3_quantize_gpu('cu91'),
+    custom_steps.test_unix_python2_mkldnn_gpu('cu91'),
+    custom_steps.test_unix_python3_mkldnn_gpu('cu91'),
+    custom_steps.test_unix_python3_integration_gpu('cu91'),
+    custom_steps.test_unix_distributed_kvstore_gpu('cu91'),
+
+    // Disabled due to: https://github.com/apache/incubator-mxnet/issues/11407
+    //custom_steps.test_unix_caffe_gpu()
   ])
 
   utils.parallel_stage('Package Pip', [
-    custom_steps.pip_package_unix(),
-    custom_steps.pip_package_unix_mkl(),
+    custom_steps.pip_package_unix_gpu('cu91'),
+    custom_steps.pip_package_unix_gpu_mkl('cu91'),
   ])
 
   utils.parallel_stage('Package Docker', [
-    custom_steps.docker_build_cpu('1.4.0', true, false),
-    custom_steps.docker_build_cpu('1.4.0', false, false),
-    custom_steps.docker_build_cpu('1.4.0', true, true),
-    custom_steps.docker_build_cpu('1.4.0', false, true)
+    custom_steps.docker_build_gpu('cu91', '1.4.0', false, false),
+    custom_steps.docker_build_gpu('cu91', '1.4.0', true, false),
+    custom_steps.docker_build_gpu('cu91', '1.4.0', false, true),
+    custom_steps.docker_build_gpu('cu91', '1.4.0', true, true)
   ])
 }
 ,

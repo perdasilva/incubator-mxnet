@@ -41,8 +41,8 @@ core_logic: {
   utils.parallel_stage('Tests', [
     custom_steps.test_unix_python2_gpu('cu80'),
     custom_steps.test_unix_python3_gpu('cu80'),
-    custom_steps.test_unix_python2_quantize_gpu('cu80'),
-    custom_steps.test_unix_python3_quantize_gpu('cu80'),
+    // custom_steps.test_unix_python2_quantize_gpu('cu80'),
+    // custom_steps.test_unix_python3_quantize_gpu('cu80'),
     custom_steps.test_unix_python2_mkldnn_gpu('cu80'),
     custom_steps.test_unix_python3_mkldnn_gpu('cu80'),
     custom_steps.test_unix_python3_integration_gpu('cu80'),
@@ -53,9 +53,15 @@ core_logic: {
   ])
 
   utils.parallel_stage('Package Pip', [
-    // custom_steps.pip_package_unix(),
     custom_steps.pip_package_unix_gpu('cu80'),
     custom_steps.pip_package_unix_gpu_mkl('cu80'),
+  ])
+
+  utils.parallel_stage('Package Docker', [
+    custom_steps.docker_build_gpu('cu80', '1.4.0', false, false),
+    custom_steps.docker_build_gpu('cu80', '1.4.0', true, false),
+    custom_steps.docker_build_gpu('cu80', '1.4.0', false, true),
+    custom_steps.docker_build_gpu('cu80', '1.4.0', true, true)
   ])
 }
 ,

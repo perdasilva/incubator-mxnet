@@ -93,7 +93,7 @@ def python3_gpu_ut_nocudnn(docker_container_name) {
 
 //------------------------------------------------------------------------------------------
 
-def docker_build_cpu(variant, mxnet_version, is_python3) {
+def docker_build_cpu(mxnet_version, is_python3, is_mkl) {
 
   def python_version = is_python3 ? 'py3' : 'py2'
   def python_command = is_python3 ? 'python3' : 'python'
@@ -101,7 +101,51 @@ def docker_build_cpu(variant, mxnet_version, is_python3) {
   def dockerfile = "cd/Dockerfile.${python_version}"
 
   def tag = "perdasilva/python:${mxnet_version}_cpu"
-  if (variant == "mkl") {
+  if (is_mkl) {
+    tag += "_mkl"
+  }
+  if (is_python3) {
+    tag += "_py3"
+  }
+
+  def workspace_name = "workspace/docker-build-release-cpu-${python_version}"
+  if (is_mkl) {
+    workspace_name += "_mkl"
+  }
+
+  def context = 'wheel_build/dist'
+  def stash_name = is_mkl ? 'pip_mkldnn_cpu' : 'pip_cpu'
+  def platform = 'ubuntu:16.04'
+
+  return ["Docker Build: ${tag}": {
+      node(NODE_LINUX_CPU) {
+        ws("${workspace_name}") {
+          timeout(time: max_time, unit: 'MINUTES') {
+            utils.unpack_and_init("${stash_name}", mx_pip, false)
+            sh "docker build -t ${tag} -f ${dockerfile} --build-arg PLATFORM=${platform} ${context}"
+            sh """docker run -v `pwd`:/mxnet ${tag} bash -c "${python_command} /mxnet/tests/python/train/test_conv.py" """
+            sh """docker run -v `pwd`:/mxnet ${tag} bash -c "${python_command} /mxnet/example/image-classification/train_mnist.py" """
+            def retry_number = 0
+            retry(5) {
+              sleep(retry_number++ * 60)
+              sh "./cd/docker_login.py"
+              sh "docker push ${tag}"
+            }
+          }
+        }
+      }
+    }]
+}
+
+def docker_build_gpu(variant, mxnet_version, is_python3, is_mkl) {
+
+  def python_version = is_python3 ? 'py3' : 'py2'
+  def python_command = is_python3 ? 'python3' : 'python'
+
+  def dockerfile = "cd/Dockerfile.${python_version}"
+
+  def tag = "perdasilva/python:${mxnet_version}_gpu_${variant}"
+  if (is_mkl) {
     tag += "_mkl"
   }
   if (is_python3) {
@@ -109,22 +153,55 @@ def docker_build_cpu(variant, mxnet_version, is_python3) {
   }
 
   def context = 'wheel_build/dist'
-  def stash_name = variant.endsWith('mkl') ? 'pip_mkldnn_cpu' : 'pip_cpu'
-  def platform = 'ubuntu:16.04'
+  def stash_name = is_mkl ? "pip_mkldnn_gpu_${variant}" : "pip_gpu_${variant}"
+  
+  def platform
+  switch (variant) {
+      case 'cu80':
+          platform = 'nvidia/cuda:8.0-cudnn7-runtime'
+          break
+      case 'cu90':
+          platform = 'nvidia/cuda:9.0-cudnn7-runtime'
+          break
+      case 'cu91':
+          platform = 'nvidia/cuda:9.1-cudnn7-runtime'
+          break
+      case 'cu92':
+          platform = 'nvidia/cuda:9.2-cudnn7-runtime'
+          break
+      case 'cu100':
+          platform = 'nvidia/cuda:10.0-cudnn7-runtime'
+          break
+      default:
+          platform = 'nvidia/cuda:10.0-cudnn7-runtime'
+          break
+  }
+
+  def workspace_name = "workspace/docker-build-release-gpu-${variant}-${python_version}"
+  if (is_mkl) {
+    workspace_name += "_mkl"
+  }
 
   return ["Docker Build: ${tag}": {
-      node(NODE_LINUX_CPU) {
-        ws("workspace/docker-build-release-cpu-${python_version}") {
+      node(NODE_LINUX_GPU) {
+        ws("${workspace_name}") {
           timeout(time: max_time, unit: 'MINUTES') {
             utils.unpack_and_init("${stash_name}", mx_pip, false)
             sh "docker build -t ${tag} -f ${dockerfile} --build-arg PLATFORM=${platform} ${context}"
-            sh """docker run -v `pwd`:/mxnet ${tag} bash -c "${python_command} /mxnet/tests/python/train/test_conv.py" """
-            sh """docker run -v `pwd`:/mxnet ${tag} bash -c "${python_command} /mxnet/example/image-classification/train_mnist.py" """
+            sh """docker run --runtime=nvidia -v `pwd`:/mxnet ${tag} bash -c "${python_command} /mxnet/tests/python/train/test_conv.py" """
+            sh """docker run --runtime=nvidia -v `pwd`:/mxnet ${tag} bash -c "${python_command} /mxnet/example/image-classification/train_mnist.py" """
+            def retry_number = 0
+            retry(5) {
+              sleep(retry_number++ * 60)
+              sh "./cd/docker_login.py"
+              sh "docker push ${tag}"
+            }
           }
         }
       }
     }]
 }
+
 
 def pip_package_unix() {
   return ['Package: CPU': {
@@ -134,6 +211,7 @@ def pip_package_unix() {
             utils.unpack_and_init("cpu", mx_lib, false)
             docker_run('publish.ubuntu1404_cpu', "package_static_python cpu", false)
             utils.pack_lib("pip_cpu", mx_pip, false)
+            archiveArtifacts artifacts: mx_pip, fingerprint: true
           }
         }
       }
@@ -148,6 +226,7 @@ def pip_package_unix_mkl() {
             utils.unpack_and_init("mkldnn_cpu", mx_mkldnn_lib, false)
             docker_run('publish.ubuntu1404_cpu', "package_static_python mkl", false)
             utils.pack_lib("pip_mkldnn_cpu", mx_pip, false)
+            archiveArtifacts artifacts: mx_pip, fingerprint: true
           }
         }
       }
@@ -156,12 +235,13 @@ def pip_package_unix_mkl() {
 
 def pip_package_unix_gpu(variant) {
   return ["Package: GPU-${variant}": {
-      node(NODE_LINUX_CPU) {
+      node(NODE_LINUX_GPU) {
         ws("workspace/package-static-gpu-${variant}") {
           timeout(time: max_time, unit: 'MINUTES') {
             utils.unpack_and_init("gpu_${variant}", mx_lib, false)
-            docker_run("ubuntu_gpu_${variant}", "package_static_python ${variant}", false)
+            docker_run("ubuntu_gpu_${variant}", "package_static_python ${variant}", true)
             utils.pack_lib("pip_gpu_${variant}", mx_pip, false)
+            archiveArtifacts artifacts: mx_pip, fingerprint: true
           }
         }
       }
@@ -170,12 +250,13 @@ def pip_package_unix_gpu(variant) {
 
 def pip_package_unix_gpu_mkl(variant) {
   return ["Package: GPU-MKL-${variant}": {
-      node(NODE_LINUX_CPU) {
+      node(NODE_LINUX_GPU) {
         ws("workspace/package-static-gpu-mkl-${variant}") {
           timeout(time: max_time, unit: 'MINUTES') {
             utils.unpack_and_init("mkldnn_gpu_${variant}", mx_mkldnn_lib, false)
-            docker_run("ubuntu_gpu_${variant}", "package_static_python ${variant}mkl", false)
+            docker_run("ubuntu_gpu_${variant}", "package_static_python ${variant}mkl", true)
             utils.pack_lib("pip_mkldnn_gpu_${variant}", mx_pip, false)
+            archiveArtifacts artifacts: mx_pip, fingerprint: true
           }
         }
       }
@@ -216,7 +297,7 @@ def compile_unix_static_cu80() {
         ws('workspace/build-static-cu80') {
           timeout(time: max_time, unit: 'MINUTES') {
             utils.init_git()
-            docker_run('publish.ubuntu1404_gpu', 'build_static_python cu80', false)
+            docker_run('publish.ubuntu1404_cpu', 'build_static_python cu80', false)
             utils.pack_lib('gpu_cu80', mx_lib, false)
           }
         }
@@ -230,7 +311,7 @@ def compile_unix_static_cu80_mkl() {
         ws('workspace/build-static-cu80-mkl') {
           timeout(time: max_time, unit: 'MINUTES') {
             utils.init_git()
-            docker_run('publish.ubuntu1404_gpu', 'build_static_python cu80mkl', false)
+            docker_run('publish.ubuntu1404_cpu', 'build_static_python cu80mkl', false)
             utils.pack_lib('mkldnn_gpu_cu80', mx_mkldnn_lib, false)
           }
         }
@@ -244,7 +325,7 @@ def compile_unix_static_cu90() {
         ws('workspace/build-static-cu90') {
           timeout(time: max_time, unit: 'MINUTES') {
             utils.init_git()
-            docker_run('publish.ubuntu1404_gpu', 'build_static_python cu90', false)
+            docker_run('publish.ubuntu1404_cpu', 'build_static_python cu90', false)
             utils.pack_lib('gpu_cu90', mx_lib, false)
           }
         }
@@ -258,8 +339,36 @@ def compile_unix_static_cu90_mkl() {
         ws('workspace/build-static-cu90-mkl') {
           timeout(time: max_time, unit: 'MINUTES') {
             utils.init_git()
-            docker_run('publish.ubuntu1404_gpu', 'build_static_python cu90mkl', false)
+            docker_run('publish.ubuntu1404_cpu', 'build_static_python cu90mkl', false)
             utils.pack_lib('mkldnn_gpu_cu90', mx_mkldnn_lib, false)
+          }
+        }
+      }
+    }]
+}
+
+def compile_unix_static_cu91() {
+  return ['CU91: Static': {
+      node(NODE_LINUX_CPU) {
+        ws('workspace/build-static-cu91') {
+          timeout(time: max_time, unit: 'MINUTES') {
+            utils.init_git()
+            docker_run('publish.ubuntu1404_cpu', 'build_static_python cu91', false)
+            utils.pack_lib('gpu_cu91', mx_lib, false)
+          }
+        }
+      }
+    }]
+}
+
+def compile_unix_static_cu91_mkl() {
+  return ['CU90MKL: Static': {
+      node(NODE_LINUX_CPU) {
+        ws('workspace/build-static-cu91-mkl') {
+          timeout(time: max_time, unit: 'MINUTES') {
+            utils.init_git()
+            docker_run('publish.ubuntu1404_cpu', 'build_static_python cu91mkl', false)
+            utils.pack_lib('mkldnn_gpu_cu91', mx_mkldnn_lib, false)
           }
         }
       }
@@ -272,7 +381,7 @@ def compile_unix_static_cu92() {
         ws('workspace/build-static-cu92') {
           timeout(time: max_time, unit: 'MINUTES') {
             utils.init_git()
-            docker_run('publish.ubuntu1404_gpu', 'build_static_python cu92', false)
+            docker_run('publish.ubuntu1404_cpu', 'build_static_python cu92', false)
             utils.pack_lib('gpu_cu92', mx_lib, false)
           }
         }
@@ -282,11 +391,11 @@ def compile_unix_static_cu92() {
 
 def compile_unix_static_cu92_mkl() {
   return ['CU92MKL: Static': {
-      node(NODE_LINUX_CsPU) {
+      node(NODE_LINUX_CPU) {
         ws('workspace/build-static-cu92-mkl') {
           timeout(time: max_time, unit: 'MINUTES') {
             utils.init_git()
-            docker_run('publish.ubuntu1404_gpu', 'build_static_python cu92mkl', false)
+            docker_run('publish.ubuntu1404_cpu', 'build_static_python cu92mkl', false)
             utils.pack_lib('mkldnn_gpu_cu92', mx_mkldnn_lib, false)
           }
         }

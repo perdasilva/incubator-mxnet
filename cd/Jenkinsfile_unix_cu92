@@ -50,7 +50,19 @@ core_logic: {
 
     // Disabled due to: https://github.com/apache/incubator-mxnet/issues/11407
     //custom_steps.test_unix_caffe_gpu()
-  ]) 
+  ])
+
+  utils.parallel_stage('Package Pip', [
+    custom_steps.pip_package_unix_gpu('cu92'),
+    custom_steps.pip_package_unix_gpu_mkl('cu92'),
+  ])
+
+  utils.parallel_stage('Package Docker', [
+    custom_steps.docker_build_gpu('cu92', '1.4.0', false, false),
+    custom_steps.docker_build_gpu('cu92', '1.4.0', true, false),
+    custom_steps.docker_build_gpu('cu92', '1.4.0', false, true),
+    custom_steps.docker_build_gpu('cu92', '1.4.0', true, true)
+  ])
 }
 ,
 failure_handler: {
