@@ -18,6 +18,9 @@
 
 set -ex
 
-mxnet_variant=${1}
-source tools/staticbuild/build.sh ${mxnet_variant} pip
+source tools/staticbuild/build.sh $mxnet_variant pip
 
+set -ex
+
+# Compile tests for discovery later
+source tools/staticbuild/build_wheel.sh
