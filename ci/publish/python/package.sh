@@ -20,4 +20,19 @@ set -ex
 
 # variant = cpu, mkl, cu80, cu80mkl, cu100, etc.
 export mxnet_variant=${1}
-source tools/staticbuild/build.sh ${mxnet_variant} pip
+
+# Create wheel workspace
+rm -rf wheel_build
+mkdir wheel_build
+cd wheel_build
+
+# Setup workspace
+# setup.py expects mxnet-build to be the
+# mxnet directory
+ln -s ../. mxnet-build
+
+# Copy the setup.py and other package resources
+cp -R ../tools/pip/* .
+
+# Build wheel file - placed in wheel_build/dist
+python setup.py bdist_wheel
