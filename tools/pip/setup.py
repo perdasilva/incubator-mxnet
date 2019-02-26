@@ -154,6 +154,11 @@ if platform.system() == 'Linux':
     shutil.copy(os.path.join(os.path.dirname(LIB_PATH[0]), 'libquadmath.so.0'), os.path.join(CURRENT_DIR, 'mxnet'))
     package_data['mxnet'].append('libquadmath.so.0')
 
+# copy licenses
+if variant.startswith('CU'):
+    shutil.copy(os.path.join(os.path.dirname(LIB_PATH[0]), '../CUB_LICENSE'), os.path.join(CURRENT_DIR, 'mxnet'))
+    package_data['mxnet'].append('CUB_LICENSE')
+
 from mxnet.base import _generate_op_module_signature
 from mxnet.ndarray.register import _generate_ndarray_function_code
 from mxnet.symbol.register import _generate_symbol_function_code
