@@ -31,16 +31,7 @@ utils.assign_node_labels(utility: 'utility', linux_cpu: 'mxnetlinux-cpu', linux_
 utils.main_wrapper(
 core_logic: {
   stage('Build') {
-    parallel 'GPU: CUDA9.1+cuDNN7': {
-      node(NODE_LINUX_CPU) {
-        ws('workspace/build-gpu') {
-          utils.init_git()
-          utils.docker_run('ubuntu_build_cuda', 'build_ubuntu_gpu_cuda100_cudnn7', false)
-          utils.pack_lib('gpu', mx_lib)
-        }
-      }
-    },
-    'CPU: USE_INT64_TENSOR_SIZE': {
+    parallel 'CPU: USE_INT64_TENSOR_SIZE': {
       node(NODE_LINUX_CPU) {
         ws('workspace/build-cpu-int64') {
           utils.init_git()
@@ -60,24 +51,8 @@ core_logic: {
     }
   }
 
-  stage('NightlyTests'){
-    parallel 'ImageClassification: GPU': {
-      node(NODE_LINUX_GPU) {
-        ws('workspace/nt-ImageClassificationTest') {
-          utils.unpack_and_init('gpu', mx_lib)
-          utils.docker_run('ubuntu_nightly_gpu', 'nightly_test_image_classification', true)
-        }
-      }
-    },
-    'KVStore_SingleNode: GPU': {
-      node('mxnetlinux-gpu-p3-8xlarge') {
-        ws('workspace/nt-KVStoreTest') {
-          utils.unpack_and_init('gpu', mx_lib)
-          utils.docker_run('ubuntu_nightly_gpu', 'nightly_test_KVStore_singleNode', true) 
-        }
-      }
-    },
-    'Test Large Tensor Size: CPU': {
+  stage('NightlyTests') {
+    parallel 'Test Large Tensor Size: CPU': {
       node(NODE_LINUX_CPU) {
         ws('workspace/large_tensor-cpu') {
             utils.unpack_and_init('cpu_int64', mx_cmake_lib)
@@ -90,62 +65,6 @@ core_logic: {
         ws('workspace/large_tensor-gpu') {
             utils.unpack_and_init('gpu_int64', mx_cmake_lib)
             utils.docker_run('ubuntu_nightly_gpu', 'nightly_test_large_tensor', true)
-        }
-      }
-    },
-    'StraightDope: Python2 Single-GPU': {
-      node(NODE_LINUX_GPU_P3) {
-        ws('workspace/straight_dope-single_gpu') {
-          utils.unpack_and_init('gpu', mx_lib)
-          utils.docker_run('ubuntu_nightly_gpu', 'nightly_straight_dope_python2_single_gpu_tests', true)
-        }
-      }
-    },
-    'StraightDope: Python2 Multi-GPU': {
-      node(NODE_LINUX_GPU) {
-        ws('workspace/straight_dope-multi_gpu') {
-          utils.unpack_and_init('gpu', mx_lib)
-          utils.docker_run('ubuntu_nightly_gpu', 'nightly_straight_dope_python2_multi_gpu_tests', true)
-        }
-      }
-    },
-    'StraightDope: Python3 Single-GPU': {
-      node(NODE_LINUX_GPU_P3) {
-        ws('workspace/straight_dope-single_gpu') {
-          utils.unpack_and_init('gpu', mx_lib)
-          utils.docker_run('ubuntu_nightly_gpu', 'nightly_straight_dope_python3_single_gpu_tests', true)
-        }
-      }
-    },
-    'StraightDope: Python3 Multi-GPU': {
-      node(NODE_LINUX_GPU) {
-        ws('workspace/straight_dope-multi_gpu') {
-          utils.unpack_and_init('gpu', mx_lib)
-          utils.docker_run('ubuntu_nightly_gpu', 'nightly_straight_dope_python3_multi_gpu_tests', true)
-        }
-      }
-    },
-    'Tutorial: Python2': {
-      node(NODE_LINUX_GPU) {
-        ws('workspace/tutorial-test-python2') {
-          utils.unpack_and_init('gpu', mx_lib)
-          utils.docker_run('ubuntu_nightly_gpu', 'nightly_tutorial_test_ubuntu_python2_gpu', true, '1500m')
-        }
-      }
-    },
-    'Tutorial: Python3': {
-      node(NODE_LINUX_GPU) {
-        ws('workspace/tutorial-test-python3') {
-          utils.unpack_and_init('gpu', mx_lib)
-          utils.docker_run('ubuntu_nightly_gpu', 'nightly_tutorial_test_ubuntu_python3_gpu', true, '1500m')
-        }
-      }
-    },
-    'Gluon estimator: GPU': {
-      node(NODE_LINUX_GPU) {
-        ws('workspace/estimator-test-gpu') {
-          utils.unpack_and_init('gpu', mx_lib)
-          utils.docker_run('ubuntu_nightly_gpu', 'nightly_estimator', true)
         }
       }
     }
