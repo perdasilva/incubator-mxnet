@@ -79,6 +79,9 @@ pipeline {
               stage("Build") {
                 cd_utils.trigger_release_job("Build dynamic libmxnet", "mxnet_lib/dynamic", params.MXNET_VARIANTS)    
               }
+              stage("Release Runtime Images") {
+                cd_utils.trigger_release_job("Release Runtime Images", "runtime_images", params.MXNET_VARIANTS)    
+              }
             }
             
           ])
