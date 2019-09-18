@@ -59,6 +59,7 @@ pipeline {
           )
 
           echo """\
+            |This is a test
             |Job Name: ${env.RELEASE_JOB_NAME}
             |Job Type: ${env.RELEASE_JOB_TYPE}
             |Release Build: ${params.RELEASE_BUILD}
