@@ -223,9 +223,8 @@ def get_mxnet_docker_build_args(image_name, mxnet_variant, image_root_dir, docke
 }
 
 def build_mxnet_image(image_name, mxnet_variant, image_root_dir, docker_build_context_dir, extra_args = []) {
-  args = get_mxnet_docker_build_args(
-    image_name, mxnet_variant, image_root_dir, docker_build_context_dir
-  ) + extra_args
+  args = get_mxnet_docker_build_args(image_name, mxnet_variant, image_root_dir, docker_build_context_dir) 
+  args += extra_args
   sh "./cd/utils/mxnet_docker_image.py build {array_to_string(args)}"
 }
 
