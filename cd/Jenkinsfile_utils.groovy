@@ -217,7 +217,7 @@ def get_mxnet_docker_base_args(image_name, mxnet_variant) {
 def get_mxnet_docker_build_args(image_name, mxnet_variant, image_root_dir, docker_build_context_dir) {
   return get_mxnet_docker_base_args(image_name, mxnet_variant) + [
       "--image-root-directory", "${image_root_dir}",
-      "--docker-build-context-directory", "${docker_image_context_dir}",
+      "--docker-build-context-directory", "${docker_build_context_dir}",
       "--build-arg", "MXNET_COMMIT_ID={env.GIT_COMMIT}"
    ]
 }
