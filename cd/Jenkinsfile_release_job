@@ -93,7 +93,8 @@ pipeline {
             "mxnet_lib/static",
             "mxnet_lib/dynamic", 
             "python/pypi",
-            "python/docker"
+            "python/docker",
+            "runtime_images"
           ]
           
           // Convert mxnet variants to a list
