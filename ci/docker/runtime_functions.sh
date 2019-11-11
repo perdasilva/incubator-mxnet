@@ -2028,10 +2028,6 @@ cd_pypi_publish() {
     ./cd/python/pypi/pypi_publish.py `readlink -f wheel_build/dist/*.whl`
 }
 
-<<<<<<< HEAD
-=======
-
->>>>>>> Adds PyPI release pipeline
 build_static_scala_mkl() {
     set -ex
     pushd .
