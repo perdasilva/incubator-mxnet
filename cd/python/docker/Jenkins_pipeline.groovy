@@ -23,6 +23,9 @@
 // NOTE: 
 // ci_utils and cd_utils are loaded by the originating Jenkins job, e.g. jenkins/Jenkinsfile_release_job
 
+IMAGE_NAME = "python"
+IMAGE_ROOT_DIR = "cd/python/docker"
+
 def get_pipeline(mxnet_variant) {
   def node_type = mxnet_variant.startsWith('cu') ? NODE_LINUX_GPU : NODE_LINUX_CPU
   return cd_utils.generic_pipeline(mxnet_variant, this, node_type)
@@ -38,36 +41,49 @@ def get_environment(mxnet_variant) {
   return "ubuntu_cpu"
 }
 
+def get_mxnet_docker_image_args(mxnet_variant) {
+    return [
+        "--image-name", "python",
+        "--mxnet-variant", "${mxnet_variant}",
+    ]
+}
 
 def build(mxnet_variant) {
   ws("workspace/python_docker/${mxnet_variant}/${env.BUILD_NUMBER}") {
     ci_utils.init_git()
     cd_utils.restore_static_libmxnet(mxnet_variant)
 
-    // package wheel file
+    // package universal wheel file
     def nvidia_docker = mxnet_variant.startsWith('cu')
     def environment = get_environment(mxnet_variant)
     ci_utils.docker_run(environment, "cd_package_pypi ${mxnet_variant}", nvidia_docker)
 
     // build python docker images
-    sh "./cd/python/docker/python_images.sh build ${mxnet_variant} py3"
-    sh "./cd/python/docker/python_images.sh build ${mxnet_variant} py2"
+    docker_build_context_dir = "./wheel_build"
+    py3_args = ["--build-arg", "PYTHON_CMD=python3", "--tag-postfix", "py3"]
+    py2_args = ["--build-arg", "PYTHON_CMD=python", "--tag-postfix", "py2"]
+    cd_utils.build_mxnet_image(IMAGE_NAME, mxnet_variant, IMAGE_ROOT_DIR, docker_build_context_dir, py3_args)
+    cd_utils.build_mxnet_image(IMAGE_NAME, mxnet_variant, IMAGE_ROOT_DIR, docker_build_context_dir, py2_args)
   }
 }
 
 def test(mxnet_variant) {
   ws("workspace/python_docker/${mxnet_variant}/${env.BUILD_NUMBER}") {
     // test python docker images
-    sh "./cd/python/docker/python_images.sh test ${mxnet_variant} py3"
-    sh "./cd/python/docker/python_images.sh test ${mxnet_variant} py2"
+    py3_args = ["--tag-postfix", "py3"]
+    py2_args = ["--tag-postfix", "py2"]
+    cd_utils.test_mxnet_image(IMAGE_NAME, mxnet_variant, "${IMAGE_ROOT_DIR}/test.sh ${mxnet_variant} python3", py3_args)
+    cd_utils.test_mxnet_image(IMAGE_NAME, mxnet_variant, "${IMAGE_ROOT_DIR}/test.sh ${mxnet_variant} python", py2_args)
   }
 }
 
 def push(mxnet_variant) {
   ws("workspace/python_docker/${mxnet_variant}/${env.BUILD_NUMBER}") {
     // push python docker images
-    sh "./cd/python/docker/python_images.sh push ${mxnet_variant} py3"
-    sh "./cd/python/docker/python_images.sh push ${mxnet_variant} py2"
+    py3_args = ["--tag-postfix", "py3"]
+    py2_args = ["--tag-postfix", "py2"]
+    cd_utils.push_mxnet_image(IMAGE_NAME, mxnet_variant, py3_args)
+    cd_utils.push_mxnet_image(IMAGE_NAME, mxnet_variant, py2_args)
   }
 }
 

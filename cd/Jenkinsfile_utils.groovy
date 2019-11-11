@@ -276,4 +276,45 @@ def generic_pipeline(mxnet_variant, custom_steps, node_type = "restricted-mxnetl
   }
 }
 
+def array_to_string(array) {
+  return array.inject("") { curr, next -> curr + (curr ? " " : "") + next }​​​​​
+}
+
+def get_mxnet_docker_base_args(image_name, mxnet_variant) {
+  return [
+      "--image-name", "${image_name}",
+      "--mxnet-variant", "${mxnet_variant}",
+  )
+}
+
+def get_mxnet_docker_build_args(image_name, mxnet_variant, image_root_dir, docker_build_context_dir) {
+   return get_mxnet_docker_base_args(image_name, mxnet_variant) + [
+      "--image-root-directory", "${image_root_dir}",
+      "--docker-build-context-directory", "${docker_image_context_dir}",
+      "--build-arg", "MXNET_COMMIT_ID={env.GIT_COMMIT}"
+   ]
+}
+
+def build_mxnet_image(image_name, mxnet_variant, image_root_dir, docker_build_context_dir, extra_args = []) {
+  args = get_mxnet_docker_build_args(
+      image_name, mxnet_variant, image_root_dir, docker_build_context_dir
+    ) + extra_args
+  )
+  sh "./cd/utils/mxnet_docker_image.py build {array_to_string(args)}"
+}
+
+def test_mxnet_image(image_name, mxnet_variant, test_command, extra_args = []) {
+  args = get_mxnet_docker_base_args(image_name, mxnet_variant) + extra_args
+  args += ["--image-test-command", "${test_command}"]
+  args = array_to_string(args)
+  sh "./cd/utils/mxnet_docker_image.py test {array_to_string(args)}"
+}
+
+def push_mxnet_image(image_name, mxnet_variant, extra_args = []) {
+  args = get_mxnet_docker_base_args(image_name, mxnet_variant) + extra_args
+  sh "./cd/utils/mxnet_docker_image.py push {array_to_string(args)}"
+}
+
+
+
 return this

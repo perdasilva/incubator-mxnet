@@ -23,6 +23,9 @@
 // NOTE: 
 // ci_utils and cd_utils are loaded by the originating Jenkins job, e.g. jenkins/Jenkinsfile_release_job
 
+IMAGE_NAME = "runtime"
+IMAGE_ROOT_DIR = "cd/runtime_images"
+
 def get_pipeline(mxnet_variant) {
   def node_type = mxnet_variant.startsWith('cu') ? NODE_LINUX_GPU : NODE_LINUX_CPU
   return cd_utils.generic_pipeline(mxnet_variant, this, node_type)
@@ -32,20 +35,21 @@ def build(mxnet_variant) {
   ws("workspace/runtime_docker/${mxnet_variant}/${env.BUILD_NUMBER}") {
     ci_utils.init_git()
     cd_utils.restore_artifact(mxnet_variant, 'dynamic')
-    sh "./cd/runtime_images/runtime_images.sh build ${mxnet_variant}"
+    docker_build_context_dir = "."
+    cd_utils.build_mxnet_image(IMAGE_NAME, mxnet_variant, IMAGE_ROOT_DIR, docker_build_context_dir)
   }
 }
 
 def test(mxnet_variant) {
   ws("workspace/runtime_docker/${mxnet_variant}/${env.BUILD_NUMBER}") {
-    sh "./cd/runtime_images/runtime_images.sh test ${mxnet_variant}"
+    cd_utils.test_mxnet_image(IMAGE_NAME, mxnet_variant, "${IMAGE_ROOT_DIR}/test.sh ${mxnet_variant}")
   }
 }
 
 def push(mxnet_variant) {
   ws("workspace/runtime_docker/${mxnet_variant}/${env.BUILD_NUMBER}") {
     retry(5) {
-      sh "./cd/runtime_images/runtime_images.sh publish ${mxnet_variant}"
+      cd_utils.push_mxnet_image(IMAGE_NAME, mxnet_variant)
     }
   }
 }
