@@ -32,43 +32,43 @@ def get_pipeline(mxnet_variant, build_fn) {
         }
       }
 
-      stage('Test') {
-        def tests = [:]
-        tests["${mxnet_variant}: Python 2"] = {
-          stage("${mxnet_variant}: Python 2") {
-            timeout(time: max_time, unit: 'MINUTES') {
-              unittest_py2(mxnet_variant)
-            }
-          }
-        }
-        tests["${mxnet_variant}: Python 3"] = {
-          stage("${mxnet_variant}: Python 3") {
-            timeout(time: max_time, unit: 'MINUTES') {
-              unittest_py3(mxnet_variant)
-            }
-          }
-        }
+      // stage('Test') {
+      //   def tests = [:]
+      //   tests["${mxnet_variant}: Python 2"] = {
+      //     stage("${mxnet_variant}: Python 2") {
+      //       timeout(time: max_time, unit: 'MINUTES') {
+      //         unittest_py2(mxnet_variant)
+      //       }
+      //     }
+      //   }
+      //   tests["${mxnet_variant}: Python 3"] = {
+      //     stage("${mxnet_variant}: Python 3") {
+      //       timeout(time: max_time, unit: 'MINUTES') {
+      //         unittest_py3(mxnet_variant)
+      //       }
+      //     }
+      //   }
 
-        // Add quantization tests for all cu variants except cu80
-        if (mxnet_variant.startsWith('cu') && !mxnet_variant.startsWith('cu80')) {
-          tests["${mxnet_variant}: Quantization Python 3"] = {
-            stage("${mxnet_variant}: Quantization Python 3") {
-              timeout(time: max_time, unit: 'MINUTES') {
-                test_gpu_quantization_py3(mxnet_variant)
-              }
-            }
-          }
-          tests["${mxnet_variant}: Quantization Python 2"] = {
-            stage("${mxnet_variant}: Python 2") {
-              timeout(time: max_time, unit: 'MINUTES') {
-                test_gpu_quantization_py2(mxnet_variant)
-              }
-            }
-          }
-        }
+      //   // Add quantization tests for all cu variants except cu80
+      //   if (mxnet_variant.startsWith('cu') && !mxnet_variant.startsWith('cu80')) {
+      //     tests["${mxnet_variant}: Quantization Python 3"] = {
+      //       stage("${mxnet_variant}: Quantization Python 3") {
+      //         timeout(time: max_time, unit: 'MINUTES') {
+      //           test_gpu_quantization_py3(mxnet_variant)
+      //         }
+      //       }
+      //     }
+      //     tests["${mxnet_variant}: Quantization Python 2"] = {
+      //       stage("${mxnet_variant}: Python 2") {
+      //         timeout(time: max_time, unit: 'MINUTES') {
+      //           test_gpu_quantization_py2(mxnet_variant)
+      //         }
+      //       }
+      //     }
+      //   }
         
-        parallel tests
-      }
+      //   parallel tests
+      // }
 
       stage('Push') {
         timeout(time: max_time, unit: 'MINUTES') {
