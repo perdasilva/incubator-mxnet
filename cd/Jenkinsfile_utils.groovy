@@ -204,91 +204,18 @@ def generic_pipeline(mxnet_variant, custom_steps, node_type = "restricted-mxnetl
   }
 }
 
-// pull artifact from repository
-def pull_artifact(variant, libtype, destination = '') {
-  sh "./ci/cd/utils/artifact_repository.py --pull --verbose --libtype ${libtype} --variant ${variant} --destination ${destination}"
-}
-
-// pulls artifact from repository and places files in the appropriate directories
-def restore_artifact(variant, libtype) {
-  pull_artifact(variant, libtype, 'mxnet_artifact')
-  // move libraries to lib directory
-
-  dir('lib') {
-    sh "mv ../mxnet_artifact/libmxnet.so ."
-    if (fileExists('../mxnet_artifact/dependencies')) {
-      sh """find "../mxnet_artifact/dependencies" -type f -name "*.so*" -exec mv {} . \\;"""
-      sh "ls ."
-    }
+def array_to_string(string_array) {
+  return string_array.inject("") { curr, item -> 
+    curr + (curr ? " " : "") + item
   }
-
-  dir('cd_misc') {
-    if (fileExists('../mxnet_artifact/dependencies')) {
-      // All library files (*.so*) should have be moved
-      // to the lib directory. If anything is left, it will be
-      // other supporting files (header files, etc.)
-      sh """find "../mxnet_artifact/dependencies" -type f -exec mv {} . \\;"""
-      sh "ls ."
-    }
-  }
-
-  dir('licenses') {
-    if (fileExists('../mxnet_artifact/licenses')) {
-      sh """find "../mxnet_artifact/licenses" -type f -exec mv {} . \\;"""
-      sh "ls ."
-    }
-  }
-
-  dir('mxnet_artifact') {
-    deleteDir()
-  }
-}
-
-// A generic pipeline that can be used by *most* CD jobs
-// It can use used when implementing the pipeline steps in the Jenkins_steps.groovy
-// script for the particular delivery channel. However, it should also implemente the
-// build, test, and push steps.
-// NOTE: Be mindful of the expected time that a step should take. If it will take a long time,
-// and it can be done in a CPU node, do it in a CPU node. We should avoid using GPU instances unless
-// we *have* to.
-// However, if it is only packaging libmxnet and that doesn't take long. The the pipeline can 
-// just run on a single node. As is done bellow.
-// For examples of multi-node CD pipelines, see the the binary_release/static and binary_release/dynamic
-// pipeline.
-def generic_pipeline(mxnet_variant, custom_steps, node_type = "restricted-mxnetlinux-cpu") {
-  return {
-    node(node_type) {
-      stage("${mxnet_variant}") {
-
-        stage('Build') {
-          custom_steps.build(mxnet_variant)
-        }
-
-        stage('Test') {
-          custom_steps.test(mxnet_variant)
-        }
-
-        stage('Push') {
-          custom_steps.push(mxnet_variant)
-        }
-      }
-    }
-  }
-}
-
-def array_to_string(array) {
-  return array.inject("") { curr, next -> curr + (curr ? " " : "") + next }​​​​​
 }
 
 def get_mxnet_docker_base_args(image_name, mxnet_variant) {
-  return [
-      "--image-name", "${image_name}",
-      "--mxnet-variant", "${mxnet_variant}",
-  )
+  return ["--image-name", "${image_name}", "--mxnet-variant", "${mxnet_variant}"]
 }
 
 def get_mxnet_docker_build_args(image_name, mxnet_variant, image_root_dir, docker_build_context_dir) {
-   return get_mxnet_docker_base_args(image_name, mxnet_variant) + [
+  return get_mxnet_docker_base_args(image_name, mxnet_variant) + [
       "--image-root-directory", "${image_root_dir}",
       "--docker-build-context-directory", "${docker_image_context_dir}",
       "--build-arg", "MXNET_COMMIT_ID={env.GIT_COMMIT}"
@@ -297,9 +224,8 @@ def get_mxnet_docker_build_args(image_name, mxnet_variant, image_root_dir, docke
 
 def build_mxnet_image(image_name, mxnet_variant, image_root_dir, docker_build_context_dir, extra_args = []) {
   args = get_mxnet_docker_build_args(
-      image_name, mxnet_variant, image_root_dir, docker_build_context_dir
-    ) + extra_args
-  )
+    image_name, mxnet_variant, image_root_dir, docker_build_context_dir
+  ) + extra_args
   sh "./cd/utils/mxnet_docker_image.py build {array_to_string(args)}"
 }
 
@@ -314,7 +240,5 @@ def push_mxnet_image(image_name, mxnet_variant, extra_args = []) {
   args = get_mxnet_docker_base_args(image_name, mxnet_variant) + extra_args
   sh "./cd/utils/mxnet_docker_image.py push {array_to_string(args)}"
 }
-
-
 
 return this
