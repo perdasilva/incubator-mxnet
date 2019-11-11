@@ -34,7 +34,7 @@ def get_pipeline(mxnet_variant) {
 def build(mxnet_variant) {
   ws("workspace/runtime_docker/${mxnet_variant}/${env.BUILD_NUMBER}") {
     ci_utils.init_git()
-    cd_utils.restore_artifact(mxnet_variant, 'dynamic')
+    cd_utils.restore_dynamic_libmxnet(mxnet_variant)
     docker_build_context_dir = "."
     cd_utils.build_mxnet_image(IMAGE_NAME, mxnet_variant, IMAGE_ROOT_DIR, docker_build_context_dir)
   }

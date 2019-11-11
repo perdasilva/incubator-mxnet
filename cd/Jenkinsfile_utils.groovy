@@ -211,11 +211,15 @@ def array_to_string(string_array) {
 }
 
 def get_mxnet_docker_base_args(image_name, mxnet_variant) {
+  echo "Getting build args"
   return ["--image-name", "${image_name}", "--mxnet-variant", "${mxnet_variant}"]
 }
 
 def get_mxnet_docker_build_args(image_name, mxnet_variant, image_root_dir, docker_build_context_dir) {
-  return get_mxnet_docker_base_args(image_name, mxnet_variant) + [
+  echo "Getting base args"
+  args = get_mxnet_docker_base_args(image_name, mxnet_variant)
+  echo "base args: {args}"
+  return args + [
       "--image-root-directory", "${image_root_dir}",
       "--docker-build-context-directory", "${docker_build_context_dir}",
       "--build-arg", "MXNET_COMMIT_ID={env.GIT_COMMIT}"
@@ -223,8 +227,12 @@ def get_mxnet_docker_build_args(image_name, mxnet_variant, image_root_dir, docke
 }
 
 def build_mxnet_image(image_name, mxnet_variant, image_root_dir, docker_build_context_dir, extra_args = []) {
+  echo "Building mxnet image {image_name}"
   args = get_mxnet_docker_build_args(image_name, mxnet_variant, image_root_dir, docker_build_context_dir) 
+  echo "build args {args}"
+  echo "Adding extra args {extra_args}"
   args += extra_args
+  echo "executing ./cd/utils/mxnet_docker_image.py build {array_to_string(args)}"
   sh "./cd/utils/mxnet_docker_image.py build {array_to_string(args)}"
 }
 
