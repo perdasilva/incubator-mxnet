@@ -72,8 +72,10 @@ def test(mxnet_variant) {
     // test python docker images
     py3_args = ["--tag-postfix", "py3"]
     py2_args = ["--tag-postfix", "py2"]
-    cd_utils.test_mxnet_image(IMAGE_NAME, mxnet_variant, "${IMAGE_ROOT_DIR}/test.sh ${mxnet_variant} python3", py3_args)
-    cd_utils.test_mxnet_image(IMAGE_NAME, mxnet_variant, "${IMAGE_ROOT_DIR}/test.sh ${mxnet_variant} python", py2_args)
+    py3_test_image_cmd = "${IMAGE_ROOT_DIR}/test_image.sh ${mxnet_variant} python3"
+    py2_test_image_cmd = "${IMAGE_ROOT_DIR}/test_image.sh ${mxnet_variant} python"
+    cd_utils.test_mxnet_image(IMAGE_NAME, mxnet_variant, IMAGE_ROOT_DIR, py3_test_image_cmd, py3_args)
+    cd_utils.test_mxnet_image(IMAGE_NAME, mxnet_variant, IMAGE_ROOT_DIR, py2_test_image_cmd, py2_args)
   }
 }
 

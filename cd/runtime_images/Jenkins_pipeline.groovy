@@ -42,7 +42,8 @@ def build(mxnet_variant) {
 
 def test(mxnet_variant) {
   ws("workspace/runtime_docker/${mxnet_variant}/${env.BUILD_NUMBER}") {
-    cd_utils.test_mxnet_image(IMAGE_NAME, mxnet_variant, "${IMAGE_ROOT_DIR}/test.sh ${mxnet_variant}")
+    image_test_command = "${IMAGE_ROOT_DIR}/test_image.sh ${mxnet_variant}"
+    cd_utils.test_mxnet_image(IMAGE_NAME, mxnet_variant, IMAGE_ROOT_DIR, image_test_command)
   }
 }
 

@@ -245,10 +245,10 @@ def test(args: argparse.Namespace):
     logging.info("Building test image...")
     _docker_build(
         image_name=test_image_name,
-        resource_directory=SCRIPT_PATH,
+        resource_directory=args.image_root_directory,
         docker_build_context=CI_DIRECTORY_PATH,
         build_args=build_args,
-        dockerfile=join(SCRIPT_PATH, "resources", "Dockerfile.test")
+        dockerfile=join(args.image_root_directory, "Dockerfile.test")
     )
 
     logging.info("Running image tests...")
@@ -381,6 +381,9 @@ def main():
         build(parser.parse_args())
 
     if args.operation == "test":
+        parser.add_argument("--image-root-directory",
+                            help="Directory containing the Dockerfile",
+                            required=True)
         parser.add_argument("--image-test-command",
                             nargs="+",
                             help="Command or script to execute within the test image",
