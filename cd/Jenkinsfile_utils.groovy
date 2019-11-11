@@ -218,34 +218,33 @@ def get_mxnet_docker_base_args(image_name, mxnet_variant) {
 def get_mxnet_docker_build_args(image_name, mxnet_variant, image_root_dir, docker_build_context_dir) {
   echo "Getting base args"
   args = get_mxnet_docker_base_args(image_name, mxnet_variant)
-  echo "base args: {args}"
+  echo "base args: ${args}"
   return args + [
       "--image-root-directory", "${image_root_dir}",
       "--docker-build-context-directory", "${docker_build_context_dir}",
-      "--build-arg", "MXNET_COMMIT_ID={env.GIT_COMMIT}"
+      "--build-arg", "MXNET_COMMIT_ID=${env.GIT_COMMIT}"
    ]
 }
 
 def build_mxnet_image(image_name, mxnet_variant, image_root_dir, docker_build_context_dir, extra_args = []) {
-  echo "Building mxnet image {image_name}"
+  echo "Building mxnet image ${image_name}"
   args = get_mxnet_docker_build_args(image_name, mxnet_variant, image_root_dir, docker_build_context_dir) 
-  echo "build args {args}"
-  echo "Adding extra args {extra_args}"
+  echo "build args ${args}"
+  echo "Adding extra args ${extra_args}"
   args += extra_args
-  echo "executing ./cd/utils/mxnet_docker_image.py build {array_to_string(args)}"
-  sh "./cd/utils/mxnet_docker_image.py build {array_to_string(args)}"
+  echo "executing ./cd/utils/mxnet_docker_image.py build ${array_to_string(args)}"
+  sh "./cd/utils/mxnet_docker_image.py build ${array_to_string(args)}"
 }
 
 def test_mxnet_image(image_name, mxnet_variant, test_command, extra_args = []) {
   args = get_mxnet_docker_base_args(image_name, mxnet_variant) + extra_args
   args += ["--image-test-command", "${test_command}"]
-  args = array_to_string(args)
-  sh "./cd/utils/mxnet_docker_image.py test {array_to_string(args)}"
+  sh "./cd/utils/mxnet_docker_image.py test ${array_to_string(args)}"
 }
 
 def push_mxnet_image(image_name, mxnet_variant, extra_args = []) {
   args = get_mxnet_docker_base_args(image_name, mxnet_variant) + extra_args
-  sh "./cd/utils/mxnet_docker_image.py push {array_to_string(args)}"
+  sh "./cd/utils/mxnet_docker_image.py push ${array_to_string(args)}"
 }
 
 return this
