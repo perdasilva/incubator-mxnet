@@ -118,7 +118,7 @@ def get_image_tags(
     image_tags = []
     if mxnet_variant == "cpu":
         tag_suffix = "cpu"
-    elif mxnet_variant == "cpu_mkl":
+    elif mxnet_variant == "mkl":
         tag_suffix = "cpu_mkl"
     elif mxnet_variant.startswith("cu"):
         tag_suffix = "gpu_{}".format(mxnet_variant)
