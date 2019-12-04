@@ -30,8 +30,8 @@ libmxnet = 'lib/libmxnet.so'
 licenses = 'licenses/*'
 
 // libmxnet dependencies
-mx_deps = ''
-mx_mkldnn_deps = ''
+mx_deps = 'lib/libtvm_runtime.so, lib/libtvmop.so, lib/tvmop.conf, libsample_lib.so, 3rdparty/dmlc-core/libdmlc.a, 3rdparty/tvm/nnvm/lib/libnnvm.a'
+mx_mkldnn_deps = 'lib/libtvm_runtime.so, lib/libtvmop.so, lib/tvmop.conf, libsample_lib.so, 3rdparty/dmlc-core/libdmlc.a, 3rdparty/tvm/nnvm/lib/libnnvm.a'
 
 // library type
 // either static or dynamic - depending on how it links to its dependencies
