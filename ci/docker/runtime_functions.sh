@@ -157,30 +157,40 @@ gather_licenses() {
 
 build_ubuntu_cpu_release() {
     set -ex
-
+    set -ex
+    export CC="gcc"
+    export CXX="g++"
     build_ccache_wrappers
 
     make  \
         DEV=0                         \
+        USE_TVM_OP=1                  \
         ENABLE_TESTCOVERAGE=0         \
         USE_CPP_PACKAGE=0             \
         USE_MKLDNN=0                  \
         USE_BLAS=openblas             \
+        USE_DIST_KVSTORE=1            \
+        USE_LIBJPEG_TURBO=1           \
         USE_SIGNAL_HANDLER=1          \
         -j$(nproc)
 }
 
 build_ubuntu_cpu_mkldnn_release() {
     set -ex
-
+    set -ex
+    export CC="gcc"
+    export CXX="g++"
     build_ccache_wrappers
 
     make  \
         DEV=0                         \
+        USE_TVM_OP=1                  \
         ENABLE_TESTCOVERAGE=0         \
         USE_CPP_PACKAGE=0             \
         USE_MKLDNN=1                  \
         USE_BLAS=openblas             \
+        USE_DIST_KVSTORE=1            \
+        USE_LIBJPEG_TURBO=1           \
         USE_SIGNAL_HANDLER=1          \
         -j$(nproc)
 }
@@ -199,7 +209,8 @@ build_ubuntu_gpu_release() {
         USE_CUDA_PATH=/usr/local/cuda             \
         USE_CUDNN=1                               \
         USE_CPP_PACKAGE=0                         \
-        USE_DIST_KVSTORE=1                        \
+        USE_TVM_OP=1                              \
+        CUDA_ARCH="$CI_CUDA_COMPUTE_CAPABILITIES" \
         USE_SIGNAL_HANDLER=1                      \
         -j$(nproc)
 }
@@ -218,7 +229,8 @@ build_ubuntu_gpu_mkldnn_release() {
         USE_CUDA_PATH=/usr/local/cuda             \
         USE_CUDNN=1                               \
         USE_CPP_PACKAGE=0                         \
-        USE_DIST_KVSTORE=1                        \
+        USE_TVM_OP=1                              \
+        CUDA_ARCH="$CI_CUDA_COMPUTE_CAPABILITIES" \
         USE_SIGNAL_HANDLER=1                      \
         -j$(nproc)
 }
